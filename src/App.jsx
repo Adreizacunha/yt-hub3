@@ -462,6 +462,23 @@ function ChannelPage({ channel, videos, colorSet, onBack, onAddVideo, onUpdateVi
                             </span>
                           )}
                         </div>
+                        {/* Drive links */}
+                        {(v.linkVideo || v.linkThumb) && (
+                          <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+                            {v.linkVideo && (
+                              <a href={v.linkVideo} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                                style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: "#f0fdf4", color: "#16a34a", textDecoration: "none", border: "1px solid #bbf7d0" }}>
+                                🎬 Vídeo
+                              </a>
+                            )}
+                            {v.linkThumb && (
+                              <a href={v.linkThumb} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                                style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 8, background: "#fdf4ff", color: "#a855f7", textDecoration: "none", border: "1px solid #e9d5ff" }}>
+                                🖼 Thumb
+                              </a>
+                            )}
+                          </div>
+                        )}
                         {NEXT_STATUS[v.status] && (
                           <button onClick={e => { e.stopPropagation(); onUpdateVideo(v.id, { status: NEXT_STATUS[v.status] }); }}
                             style={{ marginTop: 8, width: "100%", background: STATUS_BG[NEXT_STATUS[v.status]], border: "none", borderRadius: 8, padding: "6px 0", fontSize: 11, fontWeight: 700, color: STATUS_COLOR[NEXT_STATUS[v.status]], cursor: "pointer", fontFamily: "'Nunito', sans-serif" }}>
@@ -510,6 +527,8 @@ function ChannelPage({ channel, videos, colorSet, onBack, onAddVideo, onUpdateVi
             options={[{ value: "Alta", label: "🔴 Alta" }, { value: "Média", label: "🟡 Média" }, { value: "Baixa", label: "🟢 Baixa" }]} />
         </div>
         <Input label="Notas" value={form.notes || ""} onChange={v => setForm({ ...form, notes: v })} placeholder="Observações..." />
+        <Input label="🎬 Link do Vídeo (Google Drive)" value={form.linkVideo || ""} onChange={v => setForm({ ...form, linkVideo: v })} placeholder="https://drive.google.com/..." />
+        <Input label="🖼 Link da Thumbnail (Google Drive)" value={form.linkThumb || ""} onChange={v => setForm({ ...form, linkThumb: v })} placeholder="https://drive.google.com/..." />
         <Btn variant="accent" full onClick={() => {
           if (!form.title?.trim()) return alert("Digite um título!");
           if (modal === "edit") onUpdateVideo(form.id, form);
