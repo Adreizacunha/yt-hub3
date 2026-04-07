@@ -166,7 +166,7 @@ function Modal({ open, onClose, title, children }) {
   if (!open) return null;
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 2000 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "24px 24px 0 0", padding: "24px 24px 36px", width: "100%", maxWidth: 540, maxHeight: "85vh", overflowY: "auto", animation: "slideUp 0.25s ease" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "24px 24px 0 0", padding: "24px 24px 36px", width: "100%", maxWidth: 540, maxHeight: "92vh", overflowY: "auto", animation: "slideUp 0.25s ease" }}>
         <div style={{ width: 40, height: 4, background: "#e2e8f0", borderRadius: 2, margin: "0 auto 16px" }} />
         <h3 style={{ margin: "0 0 18px", fontSize: 17, fontWeight: 800, color: "#1a1a2e", fontFamily: "'Nunito', sans-serif" }}>{title}</h3>
         {children}
@@ -526,9 +526,9 @@ function ChannelPage({ channel, videos, colorSet, onBack, onAddVideo, onUpdateVi
           <Select label="Prioridade" value={form.priority || "Média"} onChange={v => setForm({ ...form, priority: v })}
             options={[{ value: "Alta", label: "🔴 Alta" }, { value: "Média", label: "🟡 Média" }, { value: "Baixa", label: "🟢 Baixa" }]} />
         </div>
+        <Input label="🎬 Link do Vídeo (Drive)" value={form.linkVideo || ""} onChange={v => setForm({ ...form, linkVideo: v })} placeholder="https://drive.google.com/..." />
+        <Input label="🖼 Link da Thumbnail (Drive)" value={form.linkThumb || ""} onChange={v => setForm({ ...form, linkThumb: v })} placeholder="https://drive.google.com/..." />
         <Input label="Notas" value={form.notes || ""} onChange={v => setForm({ ...form, notes: v })} placeholder="Observações..." />
-        <Input label="🎬 Link do Vídeo (Google Drive)" value={form.linkVideo || ""} onChange={v => setForm({ ...form, linkVideo: v })} placeholder="https://drive.google.com/..." />
-        <Input label="🖼 Link da Thumbnail (Google Drive)" value={form.linkThumb || ""} onChange={v => setForm({ ...form, linkThumb: v })} placeholder="https://drive.google.com/..." />
         <Btn variant="accent" full onClick={() => {
           if (!form.title?.trim()) return alert("Digite um título!");
           if (modal === "edit") onUpdateVideo(form.id, form);
