@@ -377,6 +377,7 @@ function ChannelPage({ channel, videos, colorSet, onBack, onAddVideo, onUpdateVi
             <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: channel.responsavel === "Thiago" ? "#dbeafe" : "#ede9fe", color: channel.responsavel === "Thiago" ? "#2563eb" : "#7c3aed" }}>{channel.responsavel}</span>
             <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: "#fef3c7", color: "#92400e" }}>📅 {channel.frequencia || 5}x/semana</span>
             {channel.idioma && <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: "#e0e7ff", color: "#4338ca" }}>🌐 {channel.idioma}</span>}
+            {channel.linkClaude && <a href={channel.linkClaude} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: "#fdf2f8", color: "#be185d", textDecoration: "none" }}>🤖 Claude</a>}
           </div>
         </div>
         <Btn variant="accent" size="md" onClick={() => { setForm({ title: "", status: "Ideia", responsavel: channel.responsavel, dueDate: "", priority: "Média", notes: "" }); setModal("new"); }}>+ Vídeo</Btn>
@@ -789,6 +790,7 @@ export default function App() {
                       <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 10, background: ch.responsavel === "Thiago" ? "#dbeafe" : "#ede9fe", color: ch.responsavel === "Thiago" ? "#2563eb" : "#7c3aed" }}>{ch.responsavel}</span>
                       <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 10, background: "#fef3c7", color: "#92400e" }}>📅 {ch.frequencia || 5}x/sem</span>
                       {ch.idioma && <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 10, background: "#e0e7ff", color: "#4338ca" }}>🌐 {ch.idioma}</span>}
+                      {ch.linkClaude && <a href={ch.linkClaude} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 10, background: "#fdf2f8", color: "#be185d", textDecoration: "none" }}>🤖 Claude</a>}
                     </div>
 
                     {/* Status pills with labels */}
@@ -1043,12 +1045,13 @@ export default function App() {
         <Input label="Nome" value={form.name || ""} onChange={v => setForm({ ...form, name: v })} placeholder="Ex: Fatos Incríveis" />
         <Input label="Nicho" value={form.nicho || ""} onChange={v => setForm({ ...form, nicho: v })} placeholder="Ex: Curiosidades" />
         <Input label="Idioma" value={form.idioma || ""} onChange={v => setForm({ ...form, idioma: v })} placeholder="Ex: Português, Inglês, Francês..." />
+        <Input label="Link Claude" value={form.linkClaude || ""} onChange={v => setForm({ ...form, linkClaude: v })} placeholder="https://claude.ai/chat/..." />
         <Select label="Quem faz os vídeos?" value={form.responsavel || "Adreiza"} onChange={v => setForm({ ...form, responsavel: v })}
           options={[{ value: "Adreiza", label: "Adreiza" }, { value: "Thiago", label: "Thiago" }]} />
         <Input label="Frequência (vídeos/semana)" type="number" value={form.frequencia || 5} onChange={v => setForm({ ...form, frequencia: parseInt(v) || 1 })} placeholder="5" />
         <Btn variant="accent" full onClick={() => {
           if (!form.name?.trim()) return alert("Digite um nome!");
-          if (modal === "editChannel") updateChannel(form.id, { name: form.name, nicho: form.nicho, idioma: form.idioma, responsavel: form.responsavel, frequencia: form.frequencia });
+          if (modal === "editChannel") updateChannel(form.id, { name: form.name, nicho: form.nicho, idioma: form.idioma, linkClaude: form.linkClaude, responsavel: form.responsavel, frequencia: form.frequencia });
           else addChannel(form);
           setModal(null);
         }} style={{ marginTop: 4 }}>{modal === "editChannel" ? "Salvar" : "Criar Canal"}</Btn>
