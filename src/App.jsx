@@ -546,6 +546,69 @@ export default function App() {
     return () => unsub();
   }, []);
 
+  // ─── Firebase realtime sync ───
+  useEffect(() => {
+    if (!user) return;
+    const unsub = onSnapshot(DOC_REF, (snap) => {
+      if (snap.exists()) {
+        const d = snap.data();
+        // Migrate Auxiliar -> Thiago
+        let migrated = false;
+        if (d.channels) {
+          d.channels = d.channels.map(c => {
+            if (c.responsavel === "Auxiliar") { migrated = true; return { ...c, responsavel: "Thiago" }; }
+            return c;
+          });
+        }
+        if (d.videos) {
+          d.videos = d.videos.map(v => {
+            if (v.responsavel === "Auxiliar") { migrated = true; return { ...v, responsavel: "Thiago" }; }
+            return v;
+          });
+        }
+        setData(d);
+        if (migrated) setDoc(DOC_REF, d);
+      } else {
+        setData(EMPTY);
+      }
+    }, (err) => {
+      console.error("Firebase error:", err);
+      try {
+        const s = localStorage.getItem("yt-cards-v2");
+        if (s) setData(JSON.parse(s));
+        else setData(EMPTY);
+      } catch { setData(EMPTY); }
+    });
+    return () => unsub();
+  }, [user]);
+
+  const save = useCallback((d) => {
+    setData(d);
+    if (saveRef.current) clearTimeout(saveRef.current);
+    saveRef.current = setTimeout(() => {
+      setDoc(DOC_REF, d).catch(err => {
+        console.error("Save failed:", err);
+        try { localStorage.setItem("yt-cards-v2", JSON.stringify(d)); } catch {}
+      });
+    }, 300);
+  }, []);
+
+  const addVideo = v => save({ ...data, videos: [...data.videos, { ...v, id: uid(), createdAt: new Date().toISOString() }] });
+  const updateVideo = (id, u) => save({ ...data, videos: data.videos.map(v => v.id === id ? { ...v, ...u } : v) });
+  const deleteVideo = id => save({ ...data, videos: data.videos.filter(v => v.id !== id) });
+  const addChannel = ch => save({ ...data, channels: [...data.channels, { ...ch, id: uid(), colorIndex: data.channels.length }] });
+  const updateChannel = (id, u) => save({ ...data, channels: data.channels.map(c => c.id === id ? { ...c, ...u } : c) });
+  const deleteChannel = id => save({ ...data, channels: data.channels.filter(c => c.id !== id), videos: data.videos.filter(v => v.channelId !== id) });
+  const addBacklog = b => save({ ...data, backlog: [...data.backlog, { ...b, id: uid() }] });
+  const updateBacklog = (id, u) => save({ ...data, backlog: data.backlog.map(b => b.id === id ? { ...b, ...u } : b) });
+  const deleteBacklog = id => save({ ...data, backlog: data.backlog.filter(b => b.id !== id) });
+  const addNote = n => save({ ...data, notes: [...(data.notes || []), { ...n, id: uid(), createdAt: new Date().toISOString() }] });
+  const updateNote = (id, u) => save({ ...data, notes: (data.notes || []).map(n => n.id === id ? { ...n, ...u } : n) });
+  const deleteNote = id => save({ ...data, notes: (data.notes || []).filter(n => n.id !== id) });
+
+  const totalPending = useMemo(() => data ? data.videos.filter(v => v.status !== "Postado").length : 0, [data]);
+  const totalOverdue = useMemo(() => data ? data.videos.filter(v => v.dueDate && new Date(v.dueDate) < new Date() && v.status !== "Postado").length : 0, [data]);
+
   const handleLogin = (loggedUser, error) => {
     if (error) {
       setAuthError(error);
@@ -580,71 +643,15 @@ export default function App() {
     return <LoginScreen onLogin={handleLogin} error={authError} />;
   }
 
-  // ─── Firebase realtime sync ───
-  useEffect(() => {
-    const unsub = onSnapshot(DOC_REF, (snap) => {
-      if (snap.exists()) {
-        const d = snap.data();
-        // Migrate Auxiliar -> Thiago
-        let migrated = false;
-        if (d.channels) {
-          d.channels = d.channels.map(c => {
-            if (c.responsavel === "Auxiliar") { migrated = true; return { ...c, responsavel: "Thiago" }; }
-            return c;
-          });
-        }
-        if (d.videos) {
-          d.videos = d.videos.map(v => {
-            if (v.responsavel === "Auxiliar") { migrated = true; return { ...v, responsavel: "Thiago" }; }
-            return v;
-          });
-        }
-        setData(d);
-        if (migrated) setDoc(DOC_REF, d);
-      } else {
-        setData(EMPTY);
-      }
-    }, (err) => {
-      console.error("Firebase error:", err);
-      // Fallback to localStorage
-      try {
-        const s = localStorage.getItem("yt-cards-v2");
-        if (s) setData(JSON.parse(s));
-        else setData(EMPTY);
-      } catch { setData(EMPTY); }
-    });
-    return () => unsub();
-  }, []);
-
-  const save = useCallback((d) => {
-    setData(d);
-    if (saveRef.current) clearTimeout(saveRef.current);
-    saveRef.current = setTimeout(() => {
-      setDoc(DOC_REF, d).catch(err => {
-        console.error("Save failed:", err);
-        // Fallback to localStorage
-        try { localStorage.setItem("yt-cards-v2", JSON.stringify(d)); } catch {}
-      });
-    }, 300);
-  }, []);
-
-  const addVideo = v => save({ ...data, videos: [...data.videos, { ...v, id: uid(), createdAt: new Date().toISOString() }] });
-  const updateVideo = (id, u) => save({ ...data, videos: data.videos.map(v => v.id === id ? { ...v, ...u } : v) });
-  const deleteVideo = id => save({ ...data, videos: data.videos.filter(v => v.id !== id) });
-  const addChannel = ch => save({ ...data, channels: [...data.channels, { ...ch, id: uid(), colorIndex: data.channels.length }] });
-  const updateChannel = (id, u) => save({ ...data, channels: data.channels.map(c => c.id === id ? { ...c, ...u } : c) });
-  const deleteChannel = id => save({ ...data, channels: data.channels.filter(c => c.id !== id), videos: data.videos.filter(v => v.channelId !== id) });
-  const addBacklog = b => save({ ...data, backlog: [...data.backlog, { ...b, id: uid() }] });
-  const updateBacklog = (id, u) => save({ ...data, backlog: data.backlog.map(b => b.id === id ? { ...b, ...u } : b) });
-  const deleteBacklog = id => save({ ...data, backlog: data.backlog.filter(b => b.id !== id) });
-  const addNote = n => save({ ...data, notes: [...(data.notes || []), { ...n, id: uid(), createdAt: new Date().toISOString() }] });
-  const updateNote = (id, u) => save({ ...data, notes: (data.notes || []).map(n => n.id === id ? { ...n, ...u } : n) });
-  const deleteNote = id => save({ ...data, notes: (data.notes || []).filter(n => n.id !== id) });
-
-  const totalPending = useMemo(() => data ? data.videos.filter(v => v.status !== "Postado").length : 0, [data]);
-  const totalOverdue = useMemo(() => data ? data.videos.filter(v => v.dueDate && new Date(v.dueDate) < new Date() && v.status !== "Postado").length : 0, [data]);
-
-  if (!data) return null;
+  if (!data) return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(160deg, #fef7f0 0%, #fff5eb 50%, #fef0e4 100%)", fontFamily: "'Nunito', sans-serif" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+      <div style={{ textAlign: "center", color: "#64748b" }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>📺</div>
+        <div style={{ fontSize: 15, fontWeight: 700 }}>Carregando dados...</div>
+      </div>
+    </div>
+  );
 
   if (!data.setupDone) {
     return (
