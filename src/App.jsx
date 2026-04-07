@@ -179,8 +179,8 @@ function Modal({ open, onClose, title, children }) {
 // SETUP WIZARD
 // ═══════════════════════════════════════
 function SetupWizard({ onComplete }) {
-  const [channels, setChannels] = useState([{ name: "", nicho: "", responsavel: "Eu", frequencia: 5 }]);
-  const addCh = () => setChannels([...channels, { name: "", nicho: "", responsavel: "Eu", frequencia: 5 }]);
+  const [channels, setChannels] = useState([{ name: "", nicho: "", responsavel: "Adreiza", frequencia: 5, idioma: "" }]);
+  const addCh = () => setChannels([...channels, { name: "", nicho: "", responsavel: "Adreiza", frequencia: 5, idioma: "" }]);
   const updCh = (i, f, v) => setChannels(channels.map((c, idx) => idx === i ? { ...c, [f]: v } : c));
   const rmCh = (i) => channels.length > 1 && setChannels(channels.filter((_, idx) => idx !== i));
 
@@ -199,8 +199,9 @@ function SetupWizard({ onComplete }) {
             <div style={{ fontSize: 11, fontWeight: 800, color: CHANNEL_COLORS[i % CHANNEL_COLORS.length].accent, marginBottom: 10, fontFamily: "'Nunito', sans-serif" }}>CANAL {i + 1}</div>
             <Input label="Nome" value={ch.name} onChange={v => updCh(i, "name", v)} placeholder="Ex: Fatos Curiosos" />
             <Input label="Nicho" value={ch.nicho} onChange={v => updCh(i, "nicho", v)} placeholder="Ex: Curiosidades" />
+            <Input label="Idioma" value={ch.idioma || ""} onChange={v => updCh(i, "idioma", v)} placeholder="Ex: Português, Inglês..." />
             <Select label="Quem faz os vídeos?" value={ch.responsavel} onChange={v => updCh(i, "responsavel", v)}
-              options={[{ value: "Eu", label: "Eu mesma" }, { value: "Thiago", label: "Thiago" }]} />
+              options={[{ value: "Adreiza", label: "Adreiza" }, { value: "Thiago", label: "Thiago" }]} />
             <Input label="Frequência (vídeos/semana)" type="number" value={ch.frequencia || 5} onChange={v => updCh(i, "frequencia", parseInt(v) || 1)} placeholder="5" />
           </div>
         ))}
@@ -367,35 +368,36 @@ function ChannelPage({ channel, videos, colorSet, onBack, onAddVideo, onUpdateVi
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-        <button onClick={onBack} style={{ background: "none", border: "none", fontSize: 22, cursor: "pointer", color: "#64748b", padding: "4px 8px" }}>←</button>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", fontSize: 26, cursor: "pointer", color: "#64748b", padding: "4px 8px" }}>←</button>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0, fontFamily: "'Nunito', sans-serif", color: "#1a1a2e" }}>{channel.name}</h1>
-          <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20, background: "#f1f5f9", color: "#475569" }}>{channel.nicho || "—"}</span>
-            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20, background: channel.responsavel === "Thiago" ? "#dbeafe" : "#ede9fe", color: channel.responsavel === "Thiago" ? "#2563eb" : "#7c3aed" }}>{channel.responsavel}</span>
-            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20, background: "#fef3c7", color: "#92400e" }}>📅 {channel.frequencia || 5}x/semana</span>
+          <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0, fontFamily: "'Nunito', sans-serif", color: "#1a1a2e" }}>{channel.name}</h1>
+          <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: "#f1f5f9", color: "#475569" }}>{channel.nicho || "—"}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: channel.responsavel === "Thiago" ? "#dbeafe" : "#ede9fe", color: channel.responsavel === "Thiago" ? "#2563eb" : "#7c3aed" }}>{channel.responsavel}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: "#fef3c7", color: "#92400e" }}>📅 {channel.frequencia || 5}x/semana</span>
+            {channel.idioma && <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: "#e0e7ff", color: "#4338ca" }}>🌐 {channel.idioma}</span>}
           </div>
         </div>
-        <Btn variant="accent" size="sm" onClick={() => { setForm({ title: "", status: "Ideia", responsavel: channel.responsavel, dueDate: "", priority: "Média", notes: "" }); setModal("new"); }}>+ Vídeo</Btn>
+        <Btn variant="accent" size="md" onClick={() => { setForm({ title: "", status: "Ideia", responsavel: channel.responsavel, dueDate: "", priority: "Média", notes: "" }); setModal("new"); }}>+ Vídeo</Btn>
       </div>
 
       {/* Overdue alert */}
       {overdue.length > 0 && (
-        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 14, padding: "10px 16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 16 }}>⚠️</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#dc2626", fontFamily: "'Nunito', sans-serif" }}>{overdue.length} vídeo{overdue.length > 1 ? "s" : ""} atrasado{overdue.length > 1 ? "s" : ""}!</span>
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 14, padding: "12px 18px", marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 18 }}>⚠️</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#dc2626", fontFamily: "'Nunito', sans-serif" }}>{overdue.length} vídeo{overdue.length > 1 ? "s" : ""} atrasado{overdue.length > 1 ? "s" : ""}!</span>
         </div>
       )}
 
       {/* Stats bar */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 12, overflowX: "auto", paddingBottom: 4 }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 14, overflowX: "auto", paddingBottom: 4 }}>
         {STATUSES.map(s => {
           const count = videos.filter(v => v.status === s).length;
           return (
-            <div key={s} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 20, background: count > 0 ? STATUS_BG[s] : "#f8fafc", whiteSpace: "nowrap" }}>
-              <span style={{ fontSize: 12 }}>{STATUS_EMOJI[s]}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: count > 0 ? STATUS_COLOR[s] : "#cbd5e1" }}>{count}</span>
+            <div key={s} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 20, background: count > 0 ? STATUS_BG[s] : "#f8fafc", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: 14 }}>{STATUS_EMOJI[s]}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: count > 0 ? STATUS_COLOR[s] : "#cbd5e1" }}>{s} {count}</span>
             </div>
           );
         })}
@@ -406,7 +408,7 @@ function ChannelPage({ channel, videos, colorSet, onBack, onAddVideo, onUpdateVi
         {[{ id: "kanban", label: "☰ Pipeline" }, { id: "calendar", label: "📅 Calendário" }].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             style={{
-              flex: 1, padding: "9px 0", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700,
+              flex: 1, padding: "11px 0", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700,
               cursor: "pointer", fontFamily: "'Nunito', sans-serif", transition: "all 0.15s",
               background: tab === t.id ? "#fff" : "transparent",
               color: tab === t.id ? "#ff6b35" : "#94a3b8",
@@ -427,7 +429,7 @@ function ChannelPage({ channel, videos, colorSet, onBack, onAddVideo, onUpdateVi
                 onDragLeave={() => setDragOver(null)}
                 onDrop={e => { e.preventDefault(); if (dragId) { onUpdateVideo(dragId, { status }); setDragId(null); setDragOver(null); } }}
                 style={{
-                  minWidth: 200, flex: "0 0 200px", scrollSnapAlign: "start",
+                  minWidth: 260, flex: "0 0 260px", scrollSnapAlign: "start",
                   background: isOver ? STATUS_BG[status] : "#fff",
                   borderRadius: 16, border: `2px solid ${isOver ? STATUS_COLOR[status] + "60" : "#f1f5f9"}`,
                   transition: "all 0.15s", display: "flex", flexDirection: "column",
@@ -499,8 +501,8 @@ function ChannelPage({ channel, videos, colorSet, onBack, onAddVideo, onUpdateVi
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <Select label="Status" value={form.status || "Ideia"} onChange={v => setForm({ ...form, status: v })}
             options={STATUSES.map(s => ({ value: s, label: `${STATUS_EMOJI[s]} ${s}` }))} />
-          <Select label="Responsável" value={form.responsavel || "Eu"} onChange={v => setForm({ ...form, responsavel: v })}
-            options={[{ value: "Eu", label: "Eu" }, { value: "Thiago", label: "Thiago" }]} />
+          <Select label="Responsável" value={form.responsavel || "Adreiza"} onChange={v => setForm({ ...form, responsavel: v })}
+            options={[{ value: "Adreiza", label: "Adreiza" }, { value: "Thiago", label: "Thiago" }]} />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <Input label="Data Postagem" type="date" value={form.dueDate || ""} onChange={v => setForm({ ...form, dueDate: v })} />
@@ -557,12 +559,14 @@ export default function App() {
         if (d.channels) {
           d.channels = d.channels.map(c => {
             if (c.responsavel === "Auxiliar") { migrated = true; return { ...c, responsavel: "Thiago" }; }
+            if (c.responsavel === "Eu") { migrated = true; return { ...c, responsavel: "Adreiza" }; }
             return c;
           });
         }
         if (d.videos) {
           d.videos = d.videos.map(v => {
             if (v.responsavel === "Auxiliar") { migrated = true; return { ...v, responsavel: "Thiago" }; }
+            if (v.responsavel === "Eu") { migrated = true; return { ...v, responsavel: "Adreiza" }; }
             return v;
           });
         }
@@ -695,7 +699,7 @@ export default function App() {
                   <button onClick={handleLogout} title="Sair"
                     style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#94a3b8", padding: "2px 4px" }}>↗</button>
                 </div>
-                <Btn variant="accent" size="sm" onClick={() => { setForm({ name: "", nicho: "", responsavel: "Eu", frequencia: 5 }); setModal("newChannel"); }}>+ Canal</Btn>
+                <Btn variant="accent" size="sm" onClick={() => { setForm({ name: "", nicho: "", idioma: "", responsavel: "Adreiza", frequencia: 5 }); setModal("newChannel"); }}>+ Canal</Btn>
               </div>
             </div>
 
@@ -760,30 +764,32 @@ export default function App() {
                       onMouseLeave={e => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.color = "#94a3b8"; }}
                     >✎</button>
 
-                    <div style={{ fontSize: 17, fontWeight: 800, color: "#1a1a2e", marginBottom: 6, lineHeight: 1.2, paddingRight: 30 }}>{ch.name}</div>
-                    <div style={{ display: "flex", gap: 5, marginBottom: 14, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: "#f1f5f9", color: "#64748b" }}>{ch.nicho || "—"}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: ch.responsavel === "Thiago" ? "#dbeafe" : "#ede9fe", color: ch.responsavel === "Thiago" ? "#2563eb" : "#7c3aed" }}>{ch.responsavel}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: "#fef3c7", color: "#92400e" }}>📅 {ch.frequencia || 5}x/sem</span>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#1a1a2e", marginBottom: 8, lineHeight: 1.2, paddingRight: 30 }}>{ch.name}</div>
+                    <div style={{ display: "flex", gap: 5, marginBottom: 12, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 10, background: "#f1f5f9", color: "#64748b" }}>{ch.nicho || "—"}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 10, background: ch.responsavel === "Thiago" ? "#dbeafe" : "#ede9fe", color: ch.responsavel === "Thiago" ? "#2563eb" : "#7c3aed" }}>{ch.responsavel}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 10, background: "#fef3c7", color: "#92400e" }}>📅 {ch.frequencia || 5}x/sem</span>
+                      {ch.idioma && <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 10, background: "#e0e7ff", color: "#4338ca" }}>🌐 {ch.idioma}</span>}
                     </div>
 
-                    {/* Mini status bar */}
-                    <div style={{ display: "flex", gap: 2, marginBottom: 12 }}>
+                    {/* Status pills with labels */}
+                    <div style={{ display: "flex", gap: 4, marginBottom: 12, flexWrap: "wrap" }}>
                       {STATUSES.map(s => {
                         const count = chVideos.filter(v => v.status === s).length;
-                        return <div key={s} style={{ flex: 1, height: 5, borderRadius: 3, background: count > 0 ? STATUS_COLOR[s] : "#f1f5f9", transition: "background 0.3s" }} />;
+                        if (count === 0) return null;
+                        return <span key={s} style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 8, background: STATUS_BG[s], color: STATUS_COLOR[s] }}>{STATUS_EMOJI[s]} {s} ({count})</span>;
                       })}
                     </div>
 
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, color: "#94a3b8" }}>
                       <span>⏳ {pending}</span>
                       <span>✅ {posted}</span>
                     </div>
 
                     {nextUp && (
-                      <div style={{ marginTop: 12, padding: "10px 12px", background: STATUS_BG[nextUp.status], borderRadius: 12, fontSize: 12, fontWeight: 600 }}>
+                      <div style={{ marginTop: 12, padding: "10px 14px", background: STATUS_BG[nextUp.status], borderRadius: 12, fontSize: 13, fontWeight: 600 }}>
                         <span style={{ color: STATUS_COLOR[nextUp.status] }}>{STATUS_EMOJI[nextUp.status]}</span>
-                        <span style={{ color: "#475569", marginLeft: 6 }}>{nextUp.title.length > 30 ? nextUp.title.slice(0, 30) + "..." : nextUp.title}</span>
+                        <span style={{ color: "#475569", marginLeft: 6 }}>{nextUp.title.length > 35 ? nextUp.title.slice(0, 35) + "..." : nextUp.title}</span>
                       </div>
                     )}
                   </div>
@@ -817,7 +823,7 @@ export default function App() {
           <div style={{ animation: "fadeIn 0.3s ease" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <h2 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>💡 Banco de Ideias</h2>
-              <Btn variant="accent" size="sm" onClick={() => { setForm({ name: "", nicho: "", notes: "", referencias: "", dataLimite: "", responsavel: "Eu", frequencia: 5 }); setModal("newIdea"); }}>+ Ideia</Btn>
+              <Btn variant="accent" size="sm" onClick={() => { setForm({ name: "", nicho: "", notes: "", referencias: "", dataLimite: "", responsavel: "Adreiza", frequencia: 5 }); setModal("newIdea"); }}>+ Ideia</Btn>
             </div>
             <p style={{ fontSize: 13, color: "#94a3b8", margin: "0 0 16px", fontWeight: 600 }}>Toda segunda, promova uma ideia e crie um canal novo!</p>
             {data.backlog.map(b => {
@@ -834,7 +840,7 @@ export default function App() {
                 <div style={{ fontSize: 17, fontWeight: 800, paddingRight: 40 }}>{b.name}</div>
                 <div style={{ display: "flex", gap: 5, marginTop: 8, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: "#cffafe", color: "#0891b2" }}>{b.nicho || "—"}</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: b.responsavel === "Thiago" ? "#dbeafe" : "#ede9fe", color: b.responsavel === "Thiago" ? "#2563eb" : "#7c3aed" }}>{b.responsavel || "Eu"}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: b.responsavel === "Thiago" ? "#dbeafe" : "#ede9fe", color: b.responsavel === "Thiago" ? "#2563eb" : "#7c3aed" }}>{b.responsavel || "Adreiza"}</span>
                   <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: "#fef3c7", color: "#92400e" }}>📅 {b.frequencia || 5}x/sem</span>
                   {b.dataLimite && (
                     <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: isOverdue ? "#fee2e2" : "#f0fdf4", color: isOverdue ? "#dc2626" : "#16a34a" }}>
@@ -854,7 +860,7 @@ export default function App() {
                 )}
                 {b.notes && <p style={{ fontSize: 13, color: "#64748b", margin: "8px 0 0", lineHeight: 1.5 }}>{b.notes}</p>}
                 <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-                  <Btn variant="accent" size="sm" onClick={() => { addChannel({ name: b.name, nicho: b.nicho, responsavel: b.responsavel || "Eu", frequencia: b.frequencia || 5 }); deleteBacklog(b.id); }}>🚀 Criar Canal</Btn>
+                  <Btn variant="accent" size="sm" onClick={() => { addChannel({ name: b.name, nicho: b.nicho, responsavel: b.responsavel || "Adreiza", frequencia: b.frequencia || 5 }); deleteBacklog(b.id); }}>🚀 Criar Canal</Btn>
                   <Btn variant="danger" size="sm" onClick={() => deleteBacklog(b.id)}>×</Btn>
                 </div>
               </div>
@@ -1017,12 +1023,13 @@ export default function App() {
       <Modal open={modal === "newChannel" || modal === "editChannel"} onClose={() => setModal(null)} title={modal === "editChannel" ? "Editar Canal" : "Novo Canal"}>
         <Input label="Nome" value={form.name || ""} onChange={v => setForm({ ...form, name: v })} placeholder="Ex: Fatos Incríveis" />
         <Input label="Nicho" value={form.nicho || ""} onChange={v => setForm({ ...form, nicho: v })} placeholder="Ex: Curiosidades" />
-        <Select label="Quem faz os vídeos?" value={form.responsavel || "Eu"} onChange={v => setForm({ ...form, responsavel: v })}
-          options={[{ value: "Eu", label: "Eu mesma" }, { value: "Thiago", label: "Thiago" }]} />
+        <Input label="Idioma" value={form.idioma || ""} onChange={v => setForm({ ...form, idioma: v })} placeholder="Ex: Português, Inglês, Francês..." />
+        <Select label="Quem faz os vídeos?" value={form.responsavel || "Adreiza"} onChange={v => setForm({ ...form, responsavel: v })}
+          options={[{ value: "Adreiza", label: "Adreiza" }, { value: "Thiago", label: "Thiago" }]} />
         <Input label="Frequência (vídeos/semana)" type="number" value={form.frequencia || 5} onChange={v => setForm({ ...form, frequencia: parseInt(v) || 1 })} placeholder="5" />
         <Btn variant="accent" full onClick={() => {
           if (!form.name?.trim()) return alert("Digite um nome!");
-          if (modal === "editChannel") updateChannel(form.id, { name: form.name, nicho: form.nicho, responsavel: form.responsavel, frequencia: form.frequencia });
+          if (modal === "editChannel") updateChannel(form.id, { name: form.name, nicho: form.nicho, idioma: form.idioma, responsavel: form.responsavel, frequencia: form.frequencia });
           else addChannel(form);
           setModal(null);
         }} style={{ marginTop: 4 }}>{modal === "editChannel" ? "Salvar" : "Criar Canal"}</Btn>
@@ -1037,8 +1044,8 @@ export default function App() {
         <Input label="Canais Referência (URLs)" value={form.referencias || ""} onChange={v => setForm({ ...form, referencias: v })} placeholder="https://youtube.com/@canal1, https://youtube.com/@canal2" />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <Input label="Data Limite p/ Criação" type="date" value={form.dataLimite || ""} onChange={v => setForm({ ...form, dataLimite: v })} />
-          <Select label="Responsável" value={form.responsavel || "Eu"} onChange={v => setForm({ ...form, responsavel: v })}
-            options={[{ value: "Eu", label: "Eu" }, { value: "Thiago", label: "Thiago" }]} />
+          <Select label="Responsável" value={form.responsavel || "Adreiza"} onChange={v => setForm({ ...form, responsavel: v })}
+            options={[{ value: "Adreiza", label: "Adreiza" }, { value: "Thiago", label: "Thiago" }]} />
         </div>
         <Input label="Frequência (vídeos/semana)" type="number" value={form.frequencia || 5} onChange={v => setForm({ ...form, frequencia: parseInt(v) || 1 })} placeholder="5" />
         <Input label="Notas" value={form.notes || ""} onChange={v => setForm({ ...form, notes: v })} placeholder="Ideias de vídeos, estratégia..." />
