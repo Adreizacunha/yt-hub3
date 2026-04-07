@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, onSnapshot, setDoc } from "firebase/firestore";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "firebase/auth";
 
 // ═══════════════════════════════════════
 // FIREBASE CONFIG
@@ -16,9 +17,86 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 const DOC_REF = doc(db, "dashboard", "main");
 
+const ALLOWED_EMAILS = [
+  "adreiza@gmail.com",
+  "thiagobragadacunha123@gmail.com",
+];
+
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+// ═══════════════════════════════════════
+// LOGIN SCREEN
+// ═══════════════════════════════════════
+function LoginScreen({ onLogin, error }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const email = result.user.email.toLowerCase();
+      if (ALLOWED_EMAILS.includes(email)) {
+        onLogin(result.user);
+      } else {
+        await signOut(auth);
+        onLogin(null, "Acesso negado. Este email não está autorizado.");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      onLogin(null, "Erro ao fazer login. Tente novamente.");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+      background: "linear-gradient(160deg, #fef7f0 0%, #fff5eb 50%, #fef0e4 100%)",
+      fontFamily: "'Nunito', sans-serif", padding: 20,
+    }}>
+      <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+      <div style={{ maxWidth: 400, width: "100%", textAlign: "center" }}>
+        <div style={{ fontSize: 64, marginBottom: 16 }}>📺</div>
+        <h1 style={{ fontSize: 32, fontWeight: 900, color: "#1a1a2e", margin: "0 0 8px" }}>YT Hub</h1>
+        <p style={{ fontSize: 15, color: "#64748b", margin: "0 0 32px", lineHeight: 1.5 }}>
+          Gestão de canais YouTube<br />Faça login pra acessar
+        </p>
+
+        {error && (
+          <div style={{
+            background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 14,
+            padding: "12px 18px", marginBottom: 20, fontSize: 13, fontWeight: 600, color: "#dc2626",
+          }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        <button onClick={handleLogin} disabled={loading}
+          style={{
+            width: "100%", padding: "14px 24px", border: "none", borderRadius: 14,
+            background: "#fff", color: "#1a1a2e", fontSize: 15, fontWeight: 700,
+            cursor: loading ? "wait" : "pointer", fontFamily: "'Nunito', sans-serif",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.08)", display: "flex", alignItems: "center",
+            justifyContent: "center", gap: 12, transition: "all 0.15s",
+          }}
+          onMouseEnter={e => { if (!loading) e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.12)"; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.08)"; }}
+        >
+          <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          {loading ? "Entrando..." : "Entrar com Google"}
+        </button>
+
+        <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 20 }}>
+          Acesso restrito a usuários autorizados
+        </p>
+      </div>
+    </div>
+  );
+}
 
 const STATUSES = ["Ideia", "Roteiro", "Edição", "Thumb", "Revisão", "Agendar", "Postado"];
 const STATUS_EMOJI = { Ideia: "💡", Roteiro: "📝", Edição: "🎬", Thumb: "🖼", Revisão: "🔍", Agendar: "📅", Postado: "✅" };
@@ -446,6 +524,8 @@ function ChannelPage({ channel, videos, colorSet, onBack, onAddVideo, onUpdateVi
 // MAIN APP
 // ═══════════════════════════════════════
 export default function App() {
+  const [user, setUser] = useState(undefined); // undefined = loading, null = not logged in
+  const [authError, setAuthError] = useState(null);
   const [data, setData] = useState(null);
   const [view, setView] = useState("home");
   const [selectedChannel, setSelectedChannel] = useState(null);
@@ -453,6 +533,52 @@ export default function App() {
   const [form, setForm] = useState({});
   const [noteFilter, setNoteFilter] = useState("Todos");
   const saveRef = useRef(null);
+
+  // ─── Auth listener ───
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser && ALLOWED_EMAILS.includes(firebaseUser.email.toLowerCase())) {
+        setUser(firebaseUser);
+      } else {
+        setUser(null);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const handleLogin = (loggedUser, error) => {
+    if (error) {
+      setAuthError(error);
+      setUser(null);
+    } else if (loggedUser) {
+      setAuthError(null);
+      setUser(loggedUser);
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    setUser(null);
+    setData(null);
+  };
+
+  // ─── Loading state ───
+  if (user === undefined) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(160deg, #fef7f0 0%, #fff5eb 50%, #fef0e4 100%)", fontFamily: "'Nunito', sans-serif" }}>
+        <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+        <div style={{ textAlign: "center", color: "#64748b" }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>📺</div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>Carregando...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Login screen ───
+  if (!user) {
+    return <LoginScreen onLogin={handleLogin} error={authError} />;
+  }
 
   // ─── Firebase realtime sync ───
   useEffect(() => {
@@ -555,7 +681,15 @@ export default function App() {
                   {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
                 </p>
               </div>
-              <Btn variant="accent" size="sm" onClick={() => { setForm({ name: "", nicho: "", responsavel: "Eu", frequencia: 5 }); setModal("newChannel"); }}>+ Canal</Btn>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#fff", borderRadius: 12, padding: "6px 12px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+                  {user.photoURL && <img src={user.photoURL} alt="" style={{ width: 24, height: 24, borderRadius: "50%" }} />}
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>{user.displayName?.split(" ")[0]}</span>
+                  <button onClick={handleLogout} title="Sair"
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#94a3b8", padding: "2px 4px" }}>↗</button>
+                </div>
+                <Btn variant="accent" size="sm" onClick={() => { setForm({ name: "", nicho: "", responsavel: "Eu", frequencia: 5 }); setModal("newChannel"); }}>+ Canal</Btn>
+              </div>
             </div>
 
             {/* Global stats */}
