@@ -629,6 +629,10 @@ export default function App() {
   const addNote = n => save({ ...data, notes: [...(data.notes || []), { ...n, id: uid(), createdAt: new Date().toISOString() }] });
   const updateNote = (id, u) => save({ ...data, notes: (data.notes || []).map(n => n.id === id ? { ...n, ...u } : n) });
   const deleteNote = id => save({ ...data, notes: (data.notes || []).filter(n => n.id !== id) });
+  const addAccount = a => save({ ...data, accounts: [...(data.accounts || []), { ...a, id: uid() }] });
+  const updateAccount = (id, u) => save({ ...data, accounts: (data.accounts || []).map(a => a.id === id ? { ...a, ...u } : a) });
+  const deleteAccount = id => save({ ...data, accounts: (data.accounts || []).filter(a => a.id !== id) });
+  const importAccounts = (list) => save({ ...data, accounts: [...(data.accounts || []), ...list.map(a => ({ ...a, id: uid() }))] });
 
   const totalPending = useMemo(() => data ? data.videos.filter(v => v.status !== "Postado").length : 0, [data]);
   const totalOverdue = useMemo(() => data ? data.videos.filter(v => v.dueDate && new Date(v.dueDate) < new Date() && v.status !== "Postado").length : 0, [data]);
@@ -690,6 +694,7 @@ export default function App() {
   const NAV = [
     { id: "home", label: "Canais", icon: "📺" },
     { id: "ideas", label: "Ideias", icon: "💡" },
+    { id: "accounts", label: "Contas", icon: "📋" },
     { id: "notes", label: "Mural", icon: "📌" },
     { id: "settings", label: "Config", icon: "⚙️" },
   ];
@@ -896,6 +901,134 @@ export default function App() {
           </div>
         )}
 
+        {/* ═══ CONTAS ═══ */}
+        {view === "accounts" && (
+          <div style={{ animation: "fadeIn 0.3s ease" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <h2 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>📋 Contas & Acessos</h2>
+              <div style={{ display: "flex", gap: 8 }}>
+                <Btn variant="ghost" size="sm" onClick={() => {
+                  const input = document.createElement("input"); input.type = "file"; input.accept = ".csv";
+                  input.onchange = async (e) => {
+                    const file = e.target.files[0]; if (!file) return;
+                    const text = await file.text();
+                    const lines = text.split("\n").filter(l => l.trim());
+                    if (lines.length < 2) return alert("CSV vazio!");
+                    const headers = lines[0].split(",").map(h => h.trim().replace(/"/g, ""));
+                    const rows = lines.slice(1).map(line => {
+                      const vals = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(",");
+                      const obj = {};
+                      headers.forEach((h, i) => { obj[h] = (vals[i] || "").replace(/"/g, "").trim(); });
+                      return {
+                        numero: obj["Nº"] || obj["No"] || obj["Numero"] || "",
+                        email: obj["Email"] || obj["email"] || "",
+                        senha: obj["Senha"] || obj["senha"] || "",
+                        nomeCanal: obj["Nome do Canal"] || obj["Canal"] || "",
+                        status: obj["Status"] || "",
+                        statusGmail: obj["Status Gmail"] || "",
+                        nVerificado: obj["Nº Verificado"] || obj["No Verificado"] || "",
+                        verificacaoId: obj["Verificação de identidade"] || obj["Verificacao"] || "",
+                        contaFacebook: obj["contas faceboock"] || obj["Facebook"] || "",
+                        emUso: obj["em uso"] || obj["Em uso"] || "",
+                      };
+                    }).filter(r => r.email || r.nomeCanal);
+                    importAccounts(rows);
+                    alert(`${rows.length} contas importadas!`);
+                  };
+                  input.click();
+                }}>📤 Importar CSV</Btn>
+                <Btn variant="accent" size="sm" onClick={() => { setForm({ numero: "", email: "", senha: "", nomeCanal: "", status: "Ativo", statusGmail: "Ativo", nVerificado: "", verificacaoId: "", contaFacebook: "", emUso: "" }); setModal("newAccount"); }}>+ Conta</Btn>
+              </div>
+            </div>
+            <p style={{ fontSize: 13, color: "#94a3b8", margin: "0 0 16px", fontWeight: 600 }}>Controle de emails, canais e acessos. Senhas ficam ocultas.</p>
+
+            {/* Filter by status */}
+            {(() => {
+              const accounts = data.accounts || [];
+              const statuses = [...new Set(accounts.map(a => a.status).filter(Boolean))];
+              const [accFilter, setAccFilter] = [noteFilter === "acc_Todos" ? "Todos" : noteFilter.startsWith("acc_") ? noteFilter.replace("acc_", "") : "Todos", (v) => setNoteFilter("acc_" + v)];
+              const filtered = accFilter === "Todos" ? accounts : accounts.filter(a => a.status === accFilter);
+
+              return (
+                <>
+                  <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+                    {["Todos", ...statuses].map(s => (
+                      <button key={s} onClick={() => setAccFilter(s)}
+                        style={{ padding: "6px 14px", borderRadius: 20, border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Nunito', sans-serif", background: accFilter === s ? "#1a1a2e" : "#f1f5f9", color: accFilter === s ? "#fff" : "#64748b" }}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Table */}
+                  <div style={{ overflowX: "auto", borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", background: "#fff", fontFamily: "'Nunito', sans-serif", fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: "#1a1a2e", color: "#fff" }}>
+                          {["Nº", "Email", "Senha", "Canal", "Status", "Gmail", "Verificado", "Identidade", "Facebook", "Em Uso", "Ações"].map(h => (
+                            <th key={h} style={{ padding: "10px 12px", fontWeight: 700, fontSize: 11, textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.map((acc, i) => {
+                          const statusColors = { "Ativo": "#dcfce7", "Em análise": "#fef3c7", "Reprovado": "#fee2e2" };
+                          const statusTextColors = { "Ativo": "#16a34a", "Em análise": "#d97706", "Reprovado": "#dc2626" };
+                          return (
+                            <tr key={acc.id} style={{ background: i % 2 === 0 ? "#fff" : "#fafafa", borderBottom: "1px solid #f1f5f9" }}>
+                              <td style={{ padding: "10px 12px", fontWeight: 700, color: "#64748b" }}>{acc.numero}</td>
+                              <td style={{ padding: "10px 12px", color: "#1a1a2e", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}>{acc.email}</td>
+                              <td style={{ padding: "10px 12px" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                  <span style={{ fontFamily: "monospace", fontSize: 12, color: "#64748b" }}>{"••••••••"}</span>
+                                  <button onClick={() => { navigator.clipboard.writeText(acc.senha); alert("Senha copiada!"); }}
+                                    style={{ background: "#f1f5f9", border: "none", borderRadius: 6, padding: "2px 6px", fontSize: 11, cursor: "pointer", color: "#64748b" }}>📋</button>
+                                </div>
+                              </td>
+                              <td style={{ padding: "10px 12px", fontWeight: 600, color: "#1a1a2e" }}>{acc.nomeCanal}</td>
+                              <td style={{ padding: "10px 12px" }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: statusColors[acc.status] || "#f1f5f9", color: statusTextColors[acc.status] || "#64748b" }}>{acc.status || "—"}</span>
+                              </td>
+                              <td style={{ padding: "10px 12px" }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: acc.statusGmail === "Ativo" ? "#dcfce7" : "#f1f5f9", color: acc.statusGmail === "Ativo" ? "#16a34a" : "#64748b" }}>{acc.statusGmail || "—"}</span>
+                              </td>
+                              <td style={{ padding: "10px 12px" }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: acc.nVerificado === "Verificado" ? "#dcfce7" : acc.nVerificado?.includes("tarde") ? "#fef3c7" : "#f1f5f9", color: acc.nVerificado === "Verificado" ? "#16a34a" : acc.nVerificado?.includes("tarde") ? "#d97706" : "#64748b" }}>{acc.nVerificado || "—"}</span>
+                              </td>
+                              <td style={{ padding: "10px 12px" }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: acc.verificacaoId === "Verificado" ? "#dcfce7" : "#f1f5f9", color: acc.verificacaoId === "Verificado" ? "#16a34a" : "#64748b" }}>{acc.verificacaoId || "—"}</span>
+                              </td>
+                              <td style={{ padding: "10px 12px", fontSize: 12, color: "#64748b" }}>{acc.contaFacebook || "—"}</td>
+                              <td style={{ padding: "10px 12px" }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: acc.emUso === "sim" ? "#dbeafe" : "#f1f5f9", color: acc.emUso === "sim" ? "#2563eb" : "#64748b" }}>{acc.emUso || "—"}</span>
+                              </td>
+                              <td style={{ padding: "10px 12px" }}>
+                                <div style={{ display: "flex", gap: 4 }}>
+                                  <button onClick={() => { setForm({ ...acc }); setModal("editAccount"); }}
+                                    style={{ background: "#f1f5f9", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 12, cursor: "pointer", color: "#64748b" }}>✎</button>
+                                  <button onClick={() => { if (confirm("Deletar conta?")) deleteAccount(acc.id); }}
+                                    style={{ background: "#fee2e2", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 12, cursor: "pointer", color: "#dc2626" }}>×</button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {filtered.length === 0 && (
+                    <div style={{ background: "#fff", borderRadius: 16, padding: "40px 20px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginTop: 12 }}>
+                      <div style={{ fontSize: 40, marginBottom: 8 }}>📋</div>
+                      <p style={{ color: "#94a3b8", fontSize: 14, fontWeight: 600 }}>Nenhuma conta cadastrada. Importe via CSV ou adicione manualmente.</p>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        )}
+
         {/* ═══ MURAL DE NOTAS ═══ */}
         {view === "notes" && (
           <div style={{ animation: "fadeIn 0.3s ease" }}>
@@ -1079,6 +1212,39 @@ export default function App() {
         }} style={{ marginTop: 4 }}>{modal === "editIdea" ? "Salvar" : "Salvar Ideia"}</Btn>
         {modal === "editIdea" && (
           <Btn variant="danger" full onClick={() => { deleteBacklog(form.id); setModal(null); }} style={{ marginTop: 8 }}>Deletar Ideia</Btn>
+        )}
+      </Modal>
+
+      {/* Account Modal */}
+      <Modal open={modal === "newAccount" || modal === "editAccount"} onClose={() => setModal(null)} title={modal === "editAccount" ? "Editar Conta" : "Nova Conta"}>
+        <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: 10 }}>
+          <Input label="Nº" value={form.numero || ""} onChange={v => setForm({ ...form, numero: v })} placeholder="1" />
+          <Input label="Email" value={form.email || ""} onChange={v => setForm({ ...form, email: v })} placeholder="email@gmail.com" />
+        </div>
+        <Input label="Senha" value={form.senha || ""} onChange={v => setForm({ ...form, senha: v })} placeholder="••••••" />
+        <Input label="Nome do Canal" value={form.nomeCanal || ""} onChange={v => setForm({ ...form, nomeCanal: v })} placeholder="Ex: canalth.01" />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <Select label="Status" value={form.status || ""} onChange={v => setForm({ ...form, status: v })}
+            options={[{ value: "", label: "—" }, { value: "Ativo", label: "🟢 Ativo" }, { value: "Em análise", label: "🟡 Em análise" }, { value: "Reprovado", label: "🔴 Reprovado" }]} />
+          <Select label="Status Gmail" value={form.statusGmail || ""} onChange={v => setForm({ ...form, statusGmail: v })}
+            options={[{ value: "", label: "—" }, { value: "Ativo", label: "🟢 Ativo" }, { value: "Inativo", label: "🔴 Inativo" }]} />
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <Select label="Nº Verificado" value={form.nVerificado || ""} onChange={v => setForm({ ...form, nVerificado: v })}
+            options={[{ value: "", label: "—" }, { value: "Verificado", label: "🟢 Verificado" }, { value: "Verificar mais tarde", label: "🟡 Verificar mais tarde" }]} />
+          <Select label="Verificação Identidade" value={form.verificacaoId || ""} onChange={v => setForm({ ...form, verificacaoId: v })}
+            options={[{ value: "", label: "—" }, { value: "Verificado", label: "🟢 Verificado" }, { value: "Pendente", label: "🟡 Pendente" }]} />
+        </div>
+        <Input label="Conta Facebook" value={form.contaFacebook || ""} onChange={v => setForm({ ...form, contaFacebook: v })} placeholder="Nome da conta" />
+        <Select label="Em Uso" value={form.emUso || ""} onChange={v => setForm({ ...form, emUso: v })}
+          options={[{ value: "", label: "—" }, { value: "sim", label: "Sim" }, { value: "não", label: "Não" }]} />
+        <Btn variant="accent" full onClick={() => {
+          if (modal === "editAccount") updateAccount(form.id, form);
+          else addAccount(form);
+          setModal(null);
+        }} style={{ marginTop: 4 }}>{modal === "editAccount" ? "Salvar" : "Adicionar Conta"}</Btn>
+        {modal === "editAccount" && (
+          <Btn variant="danger" full onClick={() => { deleteAccount(form.id); setModal(null); }} style={{ marginTop: 8 }}>Deletar Conta</Btn>
         )}
       </Modal>
 
